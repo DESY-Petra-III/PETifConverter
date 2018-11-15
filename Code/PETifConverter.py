@@ -59,7 +59,7 @@ class PETifConverter(TangoServer):
             self.s.getConfigInstance().setProcMaxNum(self.numworkers)
 
             # starts external processes - multiprocessing
-            self.s.startApplication()
+            self.s.startTiffApplication()
 
         self.debug("Checking starter instance ({})".format(self.s))
 
