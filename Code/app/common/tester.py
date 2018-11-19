@@ -7,7 +7,7 @@ import logging
 
 import app.config.main_config as config
 
-# DEBUG_LEVEL = logging.INFO
+DEBUG_LEVEL = config.GLOBAL_DEBUG_LEVEL
 
 # Logger class
 class Logger(object):

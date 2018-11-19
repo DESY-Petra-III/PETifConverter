@@ -48,7 +48,7 @@ class Starter(Tester):
         except IndexError:
             self.error("File list is empty")
 
-    def startApplication(self):
+    def startTiffApplication(self):
         """
         Initialization of the program - starts new processes
         :return:
@@ -81,7 +81,8 @@ class Starter(Tester):
         Prepares the most important paths
         :return:
         """
-        basepath = os.path.dirname(argv[0])
+        basepath = os.path.dirname(os.path.realpath(argv[0]))
+        os.chdir(basepath)
 
         c = config.get_instance()
 

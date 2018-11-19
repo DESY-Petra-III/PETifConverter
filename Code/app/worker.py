@@ -116,6 +116,49 @@ def convert_file(fn, fh, value_time, value_frames, logger=None, conf=None):
             value_frames.value += 1
             t.debug("Total conversion frames ({})".format(value_frames.value))
 
+def create_skip(fn, logger=None, conf=None, shapex=2048, shapey=2048):
+    """
+    If the file is not existing - create its substitution as empty file
+    :return:
+    """
+    t = logger
+    if t is not None:
+        t.debug("Starting skip file process ({})".format(fn))
+
+    c = None
+    if conf is None:
+        c = config.get_instance()
+    else:
+        c = conf
+
+    conv_type = c.getProcFileConvType()
+    path_replace = c.getProcPathReplacement()
+
+    # initial parameters
+    fn_origin, fn_new = fn, fn.replace(path_replace[0], path_replace[1])
+    dir_new = os.path.dirname(fn_new)
+
+    if t is not None:
+        t.debug("The old ({}) and the new skip dummy ({}) paths".format(fn_origin, fn_new))
+
+    try:
+        # creating the tree of the new directory
+        os.makedirs(dir_new, exist_ok=True)
+    except OSError as e:
+        if t is not None:
+            t.error("Error while creating a new directory ({}:{})".format(dir_new, e))
+
+    tdata = np.zeros([shapex, shapey], dtype=conv_type)
+
+    # saves the empty TIF file
+    try:
+        tfh = fabio.tifimage.TifImage(tdata)
+        tfh.write(fn_new)
+        tfh.close()
+    except (OSError, IOError) as e:
+        if t is not None:
+            t.error("Error while writing new data ({})".format(fn_new, e))
+
 def worker(file_queue, stop_queue, log_folder, value_time, value_frames, debug=None):
     """
     Function serving as a process
@@ -176,12 +219,16 @@ def worker(file_queue, stop_queue, log_folder, value_time, value_frames, debug=N
             if fn is not None:
                 # after certain timeout - consider the file to be non existing
                 ftstamp = time.time()
+
                 if ftstamp - fnts_start > ftimeout:
                     t.error("Timeout ({}), considering the file ({}) as non existing. Skipping..".format(ftimeout, fn))
+                    # creating an empty file - skip file
+                    create_skip(fn, logger=t, conf=c)
                     fn, fnts_start = None, None
                     raise WorkerFileException
 
                 # convert the file if the file exist
+                bexist = False
                 if os.path.exists(fn):
                     # make a test - size, modification time
                     try:
@@ -201,7 +248,7 @@ def worker(file_queue, stop_queue, log_folder, value_time, value_frames, debug=N
                         t.error("OSError exception ({})".format(fn))
                         raise WorkerFileException
 
-                    # final test - we can open the file by fabio and convert it
+                    # final test - we can open the file by fabio and convert itx
                     fh = None
                     try:
                         fh = fabio.openimage.openimage(fn)
@@ -218,6 +265,9 @@ def worker(file_queue, stop_queue, log_folder, value_time, value_frames, debug=N
                             fh.close()
                     # cleanup the information, wait for the next file
                     fn, fnts_start = None, None
+                else:
+                    t.error("File ({}) does not exist".format(fn))
+                    raise WorkerFileException
         except WorkerFileException:
             # - file does not satisfy some criterion - size of modification time
             t.debug("Got the WorkerFileException")
@@ -235,7 +285,7 @@ def worker(file_queue, stop_queue, log_folder, value_time, value_frames, debug=N
             t.debug("Process ({}) has received the stop signal".format(local_name))
             break
 
-        # work with file - wait until the file gets proper status - 3 seconds modified,
+        # work with file - wait until the file gets proper status - X seconds modified,
         # decent size - if not, wait
 
         time.sleep(delay)
@@ -255,6 +305,3 @@ if __name__ == "__main__":
     qquit = Queue()
 
     worker(qfile, qquit, "C:\\Users\\lorcat\\Dropbox\\Mine\\PyCharm\\_by_hosts\\win\\ConvertServer\\log", debug=True)
-    # update the worker class for the queue to make it run in a proper way
-
-    # TODO: replace the invalid file with a dummy

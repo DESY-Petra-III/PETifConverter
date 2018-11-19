@@ -143,10 +143,11 @@ class PETifConverter(TangoServer):
         res = 0
         self.debug("Adding ({}) a folder for processing".format(folder))
 
-        if not os.path.exists(folder) or not os.path.isdir(folder):
+        if not os.path.isdir(folder):
             self.error("Folder ({}) does not exist or it is not a dir")
             res = -1
         else:
+            self.debug("Adding ({}) a folder for processing".format(folder))
             files = glob.glob(os.path.join(folder, "*.tif"))
             self.debug("Found ({}) files in the folder ({})".format(len(files), folder))
 

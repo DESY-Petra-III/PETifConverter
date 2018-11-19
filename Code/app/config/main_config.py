@@ -1,6 +1,9 @@
 import os
 import numpy as np
+import logging
 from app.config.keys import *
+
+GLOBAL_DEBUG_LEVEL = logging.DEBUG
 
 # storage for internal variables
 CONFIG_STORAGE = {
@@ -13,10 +16,10 @@ CONFIG_STORAGE = {
     PROC_SLEEP_DELAY: 1.,                   # delay to sleep between process tact
     PROC_FILE_TEST_MOD_TIME: 3.,            # test - file is considered to be existing if its modified flag is older than 3s
     PROC_FILE_TEST_SIZE: 16777000,          # test - file is considerd to be existing if its size is greater than ..
-    PROC_FILE_TIMEOUT: 15.,                 # timeout after which we consider the file as non existing
-    PROC_FILE_ROTATE: 90.,                  # angle of image rotation - should be multiple of 90, otherwise, won't be used
-    PROC_FILE_FLIP: 1,                      # axis direction of numpy.ndarray.flip - None - no operation, flip is applied after the rotation
-    PROC_FILE_CONVERSION_TYPE: np.int32,    # conversion type  - numpy format
+    PROC_FILE_TIMEOUT: 30.,                 # timeout after which we consider the file as non existing
+    PROC_FILE_ROTATE: 0.,                  # angle of image rotation - should be multiple of 90, otherwise, won't be used
+    PROC_FILE_FLIP: None,                      # axis direction of numpy.ndarray.flip - None - no operation, flip is applied after the rotation
+    PROC_FILE_CONVERSION_TYPE: np.uint32,    # conversion type  - numpy format
     PROC_PATH_REPLACE: ("raw", "processed"),                  # path replacement info, do not overwrite files - create new (needle, replacement)
 
 
