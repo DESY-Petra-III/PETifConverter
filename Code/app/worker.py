@@ -139,7 +139,7 @@ def create_skip(fn, logger=None, conf=None, shapex=2048, shapey=2048):
     dir_new = os.path.dirname(fn_new)
 
     if t is not None:
-        t.debug("The old ({}) and the new skip dummy ({}) paths".format(fn_origin, fn_new))
+        t.error("Skipping file. The old ({}) and the new skip dummy ({}) paths".format(fn_origin, fn_new))
 
     try:
         # creating the tree of the new directory
