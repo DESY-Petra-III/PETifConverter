@@ -8,6 +8,7 @@ class StarterException(Exception):
 class Starter(Tester):
     # number of child processes
     NUM_PROC = None
+    STOP_SIGNAL = "Stop"
 
     def __init__(self, argv):
         # preparation
@@ -26,11 +27,91 @@ class Starter(Tester):
         # quite queue
         self.qquit = Queue()
         self.qfiles = Queue()
+        self.qunsorted = Queue()
 
         # value of total conversion time (s)
         self.value_time = Value(ctypes.c_double, 0.0)
         # value of total conversion files
         self.value_frames = Value(ctypes.c_uint32, 0)
+
+        # sorting thread - gets its own queue with strings,
+        # sorts out files, directories
+        # starts processing accordingly
+        self.thsort = threading.Thread(target=self.sortFilesDirs, args=[self.qunsorted, self.qfiles, self.qquit])
+
+
+    def _process_element(self, el):
+        """
+        Internal function preparing and testing the files
+        Directory gets the file system elements parsed for .tif
+        Files also pass through a temporary analysis - darks are ignored
+        :param el:
+        :return:
+        """
+        tfiles = None
+
+        rpatt = re.compile(".*(\.tif|\.tiff)$", re.IGNORECASE)
+
+        if os.path.isdir(el):
+            # check that the element is a directory, find all tif files, check that they are files
+            self.debug("New element is a directory ({})".format(el))
+
+            telements = glob.glob(os.path.join(el, "*.tif"))
+            tfiles = list(filter(lambda tel: os.path.isfile(tel) and not "dark" in tel.lower(), telements))
+
+        elif os.path.isfile(el) and not "dark" in el.lower():
+            self.debug("New element is a file ({})".format(el))
+            rpatt = re.compile(".*(\.tif|\.tiff)$", re.IGNORECASE)
+
+            if rpatt.match(el):
+                tfiles = [el]
+        elif not "dark" in el.lower() and rpatt.match(el):
+            # lets check if the f
+            self.debug("New element does not exist, but it could be saved soon ({})".format(el))
+            tfiles = [el]
+
+        # process files if needed
+        if tfiles is not None:
+            self.debug("Adding new elements for processing ({})".format(tfiles))
+            self.addFilenames(tfiles)
+
+    def sortFilesDirs(self, qunsorted, qfiles, qquit):
+        """
+        Obtains a queue of elements, sorts out files and directories, adds them to the processing
+        :return:
+        """
+        c = self.getConfigInstance()
+        while True:
+            try:
+
+                paths = qunsorted.get(False)
+                self.debug("Got an element to sort ({})".format(paths))
+                if isinstance(paths, list) or isinstance(paths, tuple):
+                    self.debug("Sotring a list")
+                    for el in paths:
+                        self._process_element(el)
+                else:
+                    self.debug("Sorting a single entry")
+                    self._process_element(paths)
+            except Empty:
+                pass
+
+            # test for the quit signal + sleep
+            try:
+                tquit = qquit.get(False)
+                if tquit == self.STOP_SIGNAL:
+                    break
+            except Empty:
+                pass
+
+            time.sleep(min(c.getProcThreadSleepDelay(), 1))
+
+            try:
+                tquit = qquit.get(False)
+                if tquit == self.STOP_SIGNAL:
+                    break
+            except Empty:
+                pass
 
     def addFilenames(self, *argv):
         """
@@ -48,12 +129,22 @@ class Starter(Tester):
         except IndexError:
             self.error("File list is empty")
 
+    def getPreprocessQueue(self):
+        """
+        Returns the queue used for working with the files
+        :return:
+        """
+        return self.qunsorted
+
     def startTiffApplication(self):
         """
         Initialization of the program - starts new processes
         :return:
         """
-        c = config.get_instance()
+        # start the thread responsible for file and directories analysis
+        self.thsort.start()
+
+        c = self.getConfigInstance()
 
         self.NUM_PROC = c.getProcMaxNumber()
 
@@ -84,7 +175,7 @@ class Starter(Tester):
         basepath = os.path.dirname(os.path.realpath(argv[0]))
         os.chdir(basepath)
 
-        c = config.get_instance()
+        c = self.getConfigInstance()
 
         if isinstance(c, config.Config):
             c.printHeaderMsg("Preparing configuration paths")
@@ -113,7 +204,7 @@ class Starter(Tester):
         Cleans up the logs
         :return:
         """
-        c = config.get_instance()
+        c = self.getConfigInstance()
         c.printHeaderMsg("Cleaning log files")
         c.printBulletMsg01("Log directory is ({})".format(c.getFolderLog()))
         log_folder = c.getFolderLog()
@@ -138,7 +229,7 @@ class Starter(Tester):
 
         if self.NUM_PROC is not None:
             for iproc in range(self.NUM_PROC):
-                self.qquit.put("Stop")
+                self.qquit.put(self.STOP_SIGNAL)
 
             self.info("Quitting the application now")
 
@@ -171,13 +262,11 @@ class Starter(Tester):
 
         if self.NUM_PROC is not None:
             for iproc in range(self.NUM_PROC):
-                self.qquit.put("Stop")
+                self.qquit.put(self.STOP_SIGNAL)
 
             self.info("Quitting the application now")
 
             # wating for the processes to stop
-
-
             if len(self.procs) > 0:
                 while True:
                     time.sleep(1)
@@ -194,6 +283,12 @@ class Starter(Tester):
                     if cnt >= len(self.procs):
                         break
             del self.procs[:]
+
+        # close the thread
+        if self.thsort.isAlive():
+            self.info("Stopping the sorting thread")
+            self.qquit.put(self.STOP_SIGNAL)
+            self.thsort.join()
 
         self.info("Cleaning process is finished")
 

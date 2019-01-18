@@ -7,6 +7,8 @@ import shutil
 import signal
 import ctypes
 import subprocess
+import threading
+import re
 
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command

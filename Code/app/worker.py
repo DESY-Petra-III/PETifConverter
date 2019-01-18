@@ -273,22 +273,35 @@ def worker(file_queue, stop_queue, log_folder, value_time, value_frames, debug=N
             t.debug("Got the WorkerFileException")
             pass
 
-        # get stop queue
-        try:
-            stop_queue.get(False)
-            bstop = True
-        except Empty:
-            # t.debug("Empty on stop")
-            pass
-
-        if bstop:
-            t.debug("Process ({}) has received the stop signal".format(local_name))
-            break
-
         # work with file - wait until the file gets proper status - X seconds modified,
         # decent size - if not, wait
+        tdelay = float(delay)/10.
 
-        time.sleep(delay)
+        for i in range(10):
+            # get stop queue
+            try:
+                stop_queue.get(False)
+                bstop = True
+                break
+            except Empty:
+                pass
+
+            if delay == 0:
+                break
+
+            time.sleep(tdelay)
+
+            # get stop queue
+            try:
+                stop_queue.get(False)
+                bstop = True
+                break
+            except Empty:
+                pass
+
+        if bstop:
+            t.info("Process ({}) has received the stop signal".format(local_name))
+            break
 
         # debugging purposes
         if debug:

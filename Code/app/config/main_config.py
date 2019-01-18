@@ -14,6 +14,7 @@ CONFIG_STORAGE = {
     # process related
     PROC_MAX_NUM : 5,                       # maximum number of processes
     PROC_SLEEP_DELAY: 1.,                   # delay to sleep between process tact
+    PROC_THREAD_SLEEP_DELAY: 0.5,                   # delay to sleep between file sorting thread tacts
     PROC_FILE_TEST_MOD_TIME: 3.,            # test - file is considered to be existing if its modified flag is older than 3s
     PROC_FILE_TEST_SIZE: 16777000,          # test - file is considerd to be existing if its size is greater than ..
     PROC_FILE_TIMEOUT: 30.,                 # timeout after which we consider the file as non existing
@@ -107,6 +108,9 @@ class Config(object):
 
     def getProcSleepDelay(self):
         return self.getConfiguration(PROC_SLEEP_DELAY)
+
+    def getProcThreadSleepDelay(self):
+        return self.getConfiguration(PROC_THREAD_SLEEP_DELAY)
 
     def getProcFileTimeout(self):
         return self.getConfiguration(PROC_FILE_TIMEOUT)

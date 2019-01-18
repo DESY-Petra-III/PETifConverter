@@ -10,7 +10,7 @@ class PETifConverter(TangoServer):
 
     # Attributes
 
-    NumProcessed = attribute(label="Number of input files", dtype=int, fget="getNumProcessed", description="Number of processes doing file conversion")
+    NumProcessed = attribute(label="Number of processed elements (dir+file alike)", dtype=int, fget="getNumProcessed", description="Number of processes doing file conversion")
     NumWorkers = attribute(label="Number of workers", dtype=int, fget="getConfNWorkers", description="Number of workers set by properties (higher priority) or configuration (lower priority)")
 
         # configuration related
@@ -121,41 +121,18 @@ class PETifConverter(TangoServer):
         self.delete_device()
         return 0
 
-    @command(dtype_in=[str])
-    def AddFiles(self, files):
+    @command(dtype_in=str)
+    def AddFileOrDir(self, path):
         """
         Adds new files for processing
         :return:
         """
-        self.debug("Adding ({}) files for processing".format(files))
+        self.debug("Adding ({}) path for processing".format(path))
 
         if self.s is not None:
-            self.s.addFilenames(files)
-            self.num_processed += len(files)
-
-
-    @command(dtype_in=str, dtype_out=int)
-    def AddFolder(self, folder):
-        """
-        Adds new files for processing
-        :return:
-        """
-        res = 0
-        self.debug("Adding ({}) a folder for processing".format(folder))
-
-        if not os.path.isdir(folder):
-            self.error("Folder ({}) does not exist or it is not a dir")
-            res = -1
-        else:
-            self.debug("Adding ({}) a folder for processing".format(folder))
-            files = glob.glob(os.path.join(folder, "*.tif"))
-            self.debug("Found ({}) files in the folder ({})".format(len(files), folder))
-
-            if len(files) > 0:
-                self.s.addFilenames(files)
-                self.num_processed += len(files)
-
-        return res
+            self.s.getPreprocessQueue().put(path)
+            self.num_processed += 1
+        return
 
     @command()
     def ResetStats(self):
