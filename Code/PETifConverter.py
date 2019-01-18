@@ -166,5 +166,56 @@ class PETifConverter(TangoServer):
         self.debug("Trying to reset statistics values")
         self.s.resetStats()
 
+    @command(dtype_in=str,  dtype_out=str)
+    def zSystemCommand(self, cmd):
+        """
+        Adds new files for processing (use underscore _ for passing the commands)
+        :return:
+        """
+        self.debug("Trying get the command line response ({})".format(cmd.split('_')))
+        res = subprocess.check_output(cmd.split('_'), shell=True).decode('ascii')
+        return res
+
+    @command(dtype_out=str)
+    def zListLocalWinDrives(self):
+        """
+        Adds new files for processing (use underscore _ for passing the commands)
+        :return:
+        """
+        cmd = "wmic logicaldisk get name"
+        self.debug("Trying get the command line response ({})".format(cmd))
+        res = subprocess.check_output(cmd).decode('ascii')
+        return res
+
+    @command(dtype_in=str, dtype_out=str)
+    def TestOsExists(self, filepath):
+        """
+        Adds new files for processing (use underscore _ for passing the commands)
+        :return:
+        """
+        res = str(os.path.exists(filepath))
+        self.debug("Trying get the os.path.isdir ({}:{})".format(filepath, res))
+        return res
+
+    @command(dtype_in=str, dtype_out=str)
+    def TestOsIsDir(self, filepath):
+        """
+        Adds new files for processing (use underscore _ for passing the commands)
+        :return:
+        """
+        res = str(os.path.isdir(filepath))
+        self.debug("Trying get the os.path.isdir ({}:{})".format(filepath, res))
+        return res
+
+    @command(dtype_in=str, dtype_out=str)
+    def TestOsIsFile(self, filepath):
+        """
+        Adds new files for processing (use underscore _ for passing the commands)
+        :return:
+        """
+        res = str(os.path.isfile(filepath))
+        self.debug("Trying get the os.path.isFile ({}:{})".format(filepath, res))
+        return res
+
 if __name__ == "__main__":
     PETifConverter.run_server()

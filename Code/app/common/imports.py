@@ -6,6 +6,7 @@ import glob
 import shutil
 import signal
 import ctypes
+import subprocess
 
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
