@@ -261,7 +261,7 @@ class Starter(Tester):
         self.info("Quitting the application now")
 
         if self.NUM_PROC is not None:
-            for iproc in range(self.NUM_PROC):
+            for iproc in range(self.NUM_PROC+1):
                 self.qquit.put(self.STOP_SIGNAL)
 
             self.info("Quitting the application now")

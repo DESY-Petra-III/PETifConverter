@@ -59,20 +59,28 @@ def convert_file(fn, fh, value_time, value_frames, logger=None, conf=None):
     # we consider the file to be opened
     dtype = None
     if t is not None:
-        t.debug("Dimensions ({}:{})".format(fh.dim1, fh.dim2))
-        if fh.dim1 > 0 and fh.dim2 > 0:
+        d1, d2 = fh.shape[-1], fh.shape[-2] # previously it was dim1 + dim2
+        # t.debug("Dimensions ({}:{})".format(fh.dim1, fh.dim2))
+        t.debug("Dimensions ({}:{})".format(d1, d2))
+        if d1 > 0 and d2 > 0:
             dtype = type(fh.data[0, 0])
             t.debug("Inner file format ({}:{})".format(type(dtype), fh.nbits))
 
     # remove the negative values before the transformation into uints
-    if fh.dim1 > 0 and fh.dim2 > 0 and dtype is not None:
+    d1, d2 = fh.shape[-1], fh.shape[-2]
+    if d1 > 0 and d2 > 0 and dtype is not None:
         if conv_type in (np.uint, np.uint0, np.uint8, np.uint16, np.uint32, np.uint64) and dtype in (np.float, np.float16, np.float32, np.int, np.int8, np.int16, np.int32, np.long):
             fh.data[fh.data < 0] = 0
+
+    if fh.data is None:
+        t.error("Data is invalid")
+        return
 
     # apply the transformation
     tdata = deepcopy(fh.data.astype(conv_type))
 
-    if fh.dim1 > 0 and fh.dim2 > 0:
+    d1, d2 = fh.shape[-1], fh.shape[-2]
+    if d1 > 0 and d2 > 0:
 
         # if rotation angle is a multiple of 90 - do rotation
         if rot % 90. == 0 and rot != 0:

@@ -146,7 +146,7 @@ class PETifConverter(TangoServer):
     @command(dtype_in=str,  dtype_out=str)
     def zSystemCommand(self, cmd):
         """
-        Adds new files for processing (use underscore _ for passing the commands)
+        Processes command which needs to be executed
         :return:
         """
         self.debug("Trying get the command line response ({})".format(cmd.split('_')))
@@ -195,4 +195,5 @@ class PETifConverter(TangoServer):
         return res
 
 if __name__ == "__main__":
+    os.environ.setdefault("TANGO_HOST", "haspp02oh1:10000")
     PETifConverter.run_server()
